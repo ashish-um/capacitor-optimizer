@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Capacitor Optimizer</title>
+</head>
+<body>
+  <h1>Capacitor Optimizer</h1>
+
+  <label>Capacitor Values (comma separated):</label><br />
+  <input id="caps" value="5,10,50" /><br /><br />
+
+  <label>Target Capacitance:</label><br />
+  <input id="target" value="12.5" /><br /><br />
+
+  <button onclick="calculate()">Calculate</button>
+  <pre id="output"></pre>
+
+  <!-- ✅ Declare Module *before* loading capacitor.js -->
+  <script>
+    var Module = {
+      onRuntimeInitialized: function () {
+        document.querySelector('button').disabled = false;
+      }
+    };
+  </script>
+
+  <!-- ✅ Then load the Emscripten-generated file -->
+  <script src="capacitor.js"></script>
+
+  <!-- ✅ Then write your own code that uses it -->
+  <script>
+    function calculate() {
+      const caps = document.getElementById("caps").value.split(",").map(Number);
+      const target = parseFloat(document.getElementById("target").value);
+
+      const n = caps.length;
+      const ptr = Module._malloc(n * 8); // 8 bytes per double
+
+      for (let i = 0; i < n; i++) {
+        Module.HEAPF64[(ptr >> 3) + i] = caps[i];
+      }
+
+      Module._setup(ptr, n, target, 20);
+      Module._run();
+
+      const result = Module._get_result();
+      let output = `Best Equivalent Capacitance: ${result.toFixed(6)} F\n`;
+
+      for (let i = 0; i < 3; i++) {
+        output += `Branch #${i + 1}:\n`;
+        for (let j = 0; j < n; j++) {
+          const count = Module._get_config(i, j);
+          if (count > 0) {
+            output += `  - ${count} × ${caps[j]} F\n`;
+          }
+        }
+      }
+
+      document.getElementById("output").textContent = output;
+      Module._free(ptr);
+    }
+
+    document.querySelector('button').disabled = true;
+  </script>
+</body>
+</html>
