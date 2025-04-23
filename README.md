@@ -4,3 +4,9 @@
 uses webassembly to run the cpp code in browser  
 deployed working prototype:-
 https://ashish-um.github.io/capacitor-optimizer/
+
+
+### Export command:
+```
+emcc main.cpp -o capacitor.js -s WASM=1 -s EXPORTED_FUNCTIONS="['_malloc', '_free', '_setup', '_run', '_get_result', '_get_config']" -s EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap', 'HEAPF64', 'HEAP32', 'UTF8ToString']"
+```
